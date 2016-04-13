@@ -1,0 +1,28 @@
+{
+  "name": "tucker-eric/laravel-pdf-parser",
+  "description": "A Laravel PDF Parser Implementation",
+  "keywords": [
+    "laravel",
+    "PDF Parser",
+    "PDF",
+    "PDF Reader"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Eric Tucker",
+      "email": "tucker.ericm@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.9",
+    "smalot/pdfparser": "^0.9.25",
+    "laravel/framework": "~5.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "EloquentFilter\\": "src/"
+    }
+  },
+  "minimum-stability": "dev"
+}
