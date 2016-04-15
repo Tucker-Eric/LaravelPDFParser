@@ -2,6 +2,7 @@
 
 namespace LaravelPDFParser;
 
+use LaravelPDFParser\Exceptions\UnableToUnsecureFileException;
 use Smalot\PdfParser\Parser as BaseParser;
 use Storage;
 
@@ -33,7 +34,7 @@ class Parser extends BaseParser
                     Storage::disk('local')->deleteDirectory(dirname($filename));
                 }
 
-                throw new \Exception('File Not Recognized After Trying To Remove Security');
+                throw new UnableToUnsecureFileException('File Not Recognized After Trying To Remove Security');
             }
         }
 
