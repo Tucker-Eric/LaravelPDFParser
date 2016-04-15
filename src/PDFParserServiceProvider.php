@@ -9,7 +9,7 @@ class PDFParserServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('pdfparser', function () {
-            return new \Smalot\PdfParser\Parser;
+            return new Parser;
         });
     }
 }
