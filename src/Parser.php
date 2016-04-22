@@ -59,12 +59,13 @@ class Parser extends BaseParser
             $message = empty($this->password) ? 'Password Required To Unencrypt PDF' : 'Incorrect Password '.$this->password;
             throw new IncorrectPDFPasswordException($message);
         }
-        // If we have a password, save what was done, if not leave it secured
-        if ($this->password !== null && $this->password !== '') {
+
+        // If there is a password entered we want to replace the secure PDF
+        if (strlen($this->password) > 0) {
             rename($unsecured, $this->pdf);
         }
 
-        return $this->pdf;
+        return $unsecured;
     }
 
     public function hasPassword($file)
@@ -77,7 +78,7 @@ class Parser extends BaseParser
 
         return false;
     }
-    
+
     public function removePassword($file, $password)
     {
         $this->pdf = $file;
@@ -87,7 +88,7 @@ class Parser extends BaseParser
         } catch (IncorrectPDFPasswordException $e) {
             return false;
         }
-        
+
         return true;
     }
 }
