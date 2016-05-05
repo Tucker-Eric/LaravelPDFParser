@@ -74,6 +74,10 @@ class Parser extends BaseParser
             $this->parseFile($file);
         } catch (IncorrectPDFPasswordException $e) {
             return true;
+        } catch(\Exception $e) {
+            if($e->getMessage() !== 'Object list not found. Possible secured file.') {
+                throw $e;
+            }
         }
 
         return false;
