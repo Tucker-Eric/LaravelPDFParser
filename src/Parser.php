@@ -49,7 +49,7 @@ class Parser extends BaseParser
         $unsecured = str_replace(basename($this->pdf), 'u-'.basename($this->pdf), $this->pdf);
 
         $cmd = 'gs -q -dNOPAUSE -dBATCH -dNumRenderingThreads=2 -dNOGC -sDEVICE=pdfwrite'
-            ." -sPDFPassword={$this->password} -sOutputFile='$unsecured' -c .setpdfwrite -f '{$this->pdf}'";
+            ." -sPDFPassword='{$this->password}' -sOutputFile='$unsecured' -c .setpdfwrite -f '{$this->pdf}'";
 
         $resp = shell_exec(escapeshellcmd($cmd));
 
