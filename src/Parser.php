@@ -49,9 +49,11 @@ class Parser extends BaseParser
         $unsecured = str_replace(basename($this->pdf), 'u-'.basename($this->pdf), $this->pdf);
 
         $cmd = 'gs -q -dNOPAUSE -dBATCH -dNumRenderingThreads=2 -dNOGC -sDEVICE=pdfwrite'
-            ." -sPDFPassword='{$this->password}' -sOutputFile='$unsecured' -c .setpdfwrite -f '{$this->pdf}'";
-
-        $resp = shell_exec(escapeshellcmd($cmd));
+            .' -sPDFPassword='.escapeshellarg($this->password)
+            .' -sOutputFile='.escapeshellarg($unsecured)
+            .' -c .setpdfwrite -f '.escapeshellarg($this->pdf);
+        
+        $resp = shell_exec($cmd);
 
         if (strpos($resp, 'Error: /invalidfileaccess in pdf_process_Encrypt') !== false) {
             unlink($unsecured);
@@ -74,8 +76,8 @@ class Parser extends BaseParser
             $this->parseFile($file);
         } catch (IncorrectPDFPasswordException $e) {
             return true;
-        } catch(\Exception $e) {
-            if($e->getMessage() !== 'Object list not found. Possible secured file.') {
+        } catch (\Exception $e) {
+            if ($e->getMessage() !== 'Object list not found. Possible secured file.') {
                 throw $e;
             }
         }
