@@ -2,40 +2,134 @@
 
 namespace LaravelPDFParser;
 
-use Illuminate\Http\UploadedFile;
 use LaravelPDFParser\Exceptions\EncryptedPDFNeedsPasswordException;
 use LaravelPDFParser\Exceptions\IncorrectPDFPasswordException;
 use Smalot\PdfParser\Parser as BaseParser;
-use Storage;
 
-class Parser extends BaseParser
+class Parser
 {
 
+    /**
+     * @var string
+     */
     protected $pdf;
 
-    protected $password;
+    /**
+     * @var BaseParser
+     */
+    protected $parser;
 
+    /**
+     * @var string
+     */
+    protected $password = '';
+
+    /**
+     * @var bool
+     */
     protected $has_error = false;
 
-    public function parseFile($filename, $password = '')
+    /**
+     * @var bool
+     */
+    protected $has_password;
+
+    /**
+     * @var string
+     */
+    protected $invalid_error;
+
+    public function __construct($filename = null, $password = null)
     {
-        $this->pdf = $filename;
-        $this->password = $password;
+        $this->parser = new BaseParser;
+        $this->setPdf($filename)->setPassword($password);
+    }
+
+    public function isValid($filename = null)
+    {
+        try {
+            $this->parseFile($filename);
+        } catch (\Exception $e) {
+            if (preg_match('/Empty PDF data|Invalid PDF data|Invalid type/', $e->getMessage())) {
+                $this->setInvalidError('It looks like that PDF is corrupt. Please open it and check before trying again');
+
+                return false;
+            }
+
+        }
+
+        return true;
+    }
+
+    private function setInvalidError($message)
+    {
+        $this->invalid_error = $message;
+    }
+
+    /**
+     * This will free memory so we don't have the file in memory twice
+     * @return $this
+     */
+    protected function resetParser()
+    {
+        unset($this->parser);
+        $this->parser = new BaseParser;
+
+        return $this;
+    }
+
+    public function setPdf($pdf = null)
+    {
+        if ($pdf !== null) {
+            $this->pdf = $pdf;
+        }
+
+        return $this;
+    }
+
+    public function setPassword($password = null)
+    {
+        if ($password !== null) {
+            $this->password = $password;
+        }
+
+        return $this;
+    }
+
+    public function getPassword()
+    {
+        return $this->password;
+    }
+
+    public function parseFile($filename = null, $password = null)
+    {
+        $this->setPdf($filename)->setPassword($password);
+
+        return $this->parser->parseFile($this->pdf);
+    }
+
+    /**
+     * Remove password returns true if removed or false if incorrect password
+     * @param null $file
+     * @param null $password
+     * @return bool
+     * @throws \Exception
+     */
+    public function removePassword($file = null, $password = null)
+    {
+        $this->setPdf($file)->setPassword($password);
 
         try {
-            $pdf = parent::parseFile($this->pdf);
+            $this->gsRewrite();
+        } catch (IncorrectPDFPasswordException $e) {
+            return false;
         } catch (\Exception $e) {
-            //If this is a secure pdf we try unsecure it and try again
-            if ($e->getMessage() === 'Secured pdf file are currently not supported.') {
-                // Run the command
-                // Call this function again and hopefully return $pdf
-                $pdf = parent::parseFile($this->gsRewrite());
-            } else {
+            if ($e->getMessage() !== 'Object list not found. Possible secured file.') {
                 throw $e;
             }
         }
 
-        return $pdf;
+        return true;
     }
 
     /**
@@ -52,7 +146,7 @@ class Parser extends BaseParser
             .' -sPDFPassword='.escapeshellarg($this->password)
             .' -sOutputFile='.escapeshellarg($unsecured)
             .' -c .setpdfwrite -f '.escapeshellarg($this->pdf);
-        
+
         $resp = shell_exec($cmd);
 
         if (strpos($resp, 'Error: /invalidfileaccess in pdf_process_Encrypt') !== false) {
@@ -70,31 +164,27 @@ class Parser extends BaseParser
         return $unsecured;
     }
 
-    public function hasPassword($file)
+    public function hasPassword($file = null)
     {
+        $this->setPdf($file);
+        if (is_bool($this->has_password)) {
+            return $this->has_password;
+        }
+
         try {
-            $this->parseFile($file);
-        } catch (IncorrectPDFPasswordException $e) {
-            return true;
+            $this->parseFile();
         } catch (\Exception $e) {
-            if ($e->getMessage() !== 'Object list not found. Possible secured file.') {
-                throw $e;
+            //If this is a secure pdf we try unsecure it and try again
+            if ($e->getMessage() === 'Secured pdf file are currently not supported.') {
+                $this->resetParser();
+
+                return $this->has_password = true;
             }
+
+            throw $e;
         }
 
-        return false;
+        return $this->has_password = false;
     }
 
-    public function removePassword($file, $password)
-    {
-        $this->pdf = $file;
-        $this->password = $password;
-        try {
-            $this->gsRewrite();
-        } catch (IncorrectPDFPasswordException $e) {
-            return false;
-        }
-
-        return true;
-    }
 }
