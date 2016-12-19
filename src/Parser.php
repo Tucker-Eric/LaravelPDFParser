@@ -124,7 +124,11 @@ class Parser
         } catch (IncorrectPDFPasswordException $e) {
             return false;
         } catch (\Exception $e) {
-            if ($e->getMessage() !== 'Object list not found. Possible secured file.') {
+            $securedMessages = [
+                'Object list not found. Possible secured file.',
+                'Secured pdf file are currently not supported.'
+            ];
+            if (!in_array($e->getMessage(), $securedMessages, true)) {
                 throw $e;
             }
         }
