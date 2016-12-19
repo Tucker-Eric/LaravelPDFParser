@@ -96,6 +96,11 @@ class Parser
         return $this;
     }
 
+    public function getParser()
+    {
+        return $this->parser;
+    }
+
     public function getPassword()
     {
         return $this->password;
@@ -128,7 +133,7 @@ class Parser
                 'Object list not found. Possible secured file.',
                 'Secured pdf file are currently not supported.'
             ];
-            if (!in_array($e->getMessage(), $securedMessages, true)) {
+            if (! in_array($e->getMessage(), $securedMessages, true)) {
                 throw $e;
             }
         }
@@ -174,21 +179,19 @@ class Parser
         if (is_bool($this->has_password)) {
             return $this->has_password;
         }
-
-        try {
-            $this->parseFile();
-        } catch (\Exception $e) {
-            //If this is a secure pdf we try unsecure it and try again
-            if ($e->getMessage() === 'Secured pdf file are currently not supported.') {
-                $this->resetParser();
-
-                return $this->has_password = true;
-            }
-
-            throw $e;
-        }
-
-        return $this->has_password = false;
+        // Text file of end of pdf
+        $txt = pathinfo($this->pdf, PATHINFO_DIRNAME).'/'.pathinfo($this->pdf, PATHINFO_FILENAME).'.txt';
+        // Create the text file
+        exec('tail -50 '.escapeshellarg($this->pdf).' > '.escapeshellarg($txt));
+        // Open the text file
+        $handle = fopen($txt, 'r');
+        // Read the contents of the text file
+        $contents = stream_get_contents($handle);
+        // Close so we can delete
+        fclose($handle);
+        unlink($txt);
+        // Return if we have a password
+        return preg_match('/encrypt/i', $contents);
     }
 
 }
