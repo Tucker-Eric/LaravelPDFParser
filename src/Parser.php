@@ -173,7 +173,7 @@ class Parser
         return $unsecured;
     }
 
-    public function hasPassword($file = null)
+    public function hasPassword($file = null, $attemptToRemove = true)
     {
         $this->setPdf($file);
         if (is_bool($this->has_password)) {
@@ -191,7 +191,15 @@ class Parser
         fclose($handle);
         unlink($txt);
         // Return if we have a password
-        return preg_match('/encrypt/i', $contents);
+        if (preg_match('/encrypt/i', $contents)) {
+            try {
+                unlink($this->gsRewrite());
+            } catch (IncorrectPDFPasswordException $e) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
